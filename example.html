@@ -1,0 +1,141 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+	<title>Table navigation test</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<script src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.1.0/prototype.js" type="text/javascript" charset="utf-8"></script>
+	<script src="table-navigation.js" type="text/javascript" charset="utf-8"></script>
+	<style type="text/css" media="screen">
+	  body {
+	    font-family: Helvetica, Arial;
+	  }
+	  table {
+	    margin: 0 auto;
+	    border-collapse: collapse;
+	  }
+	  th, td {
+	    padding: 30px;
+	    border: 2px solid black;
+	    text-align: center;
+	  }
+	  .highlighted {
+	    background-color: red;
+	  }
+	  .two-columns div {
+	    width: 50%;
+	    text-align: center;
+	  }
+	  .two-columns .left {
+	    float: left;
+	  }
+	  .two-columns .right {
+	    float: right;
+	  }
+	  
+	  .clearfix:after {
+    	content: ".";
+    	display: block;
+    	clear: both;
+    	visibility: hidden;
+    	line-height: 0;
+    	height: 0;
+    }
+
+    .clearfix {
+    	display: inline-block;
+    }
+
+    html[xmlns] .clearfix {
+    	display: block;
+    }
+
+    * html .clearfix {
+    	height: 1%;
+    }
+	</style>
+</head>
+<body>
+
+<h1>Table expansion</h1>
+
+<p>
+  Hover the cells in the expanded table to see their corresponding cells in the original table
+  get highlighted. In the expanded table, all cells are &quot;unfolded&quot; to remove any
+  rowspans and colspans.
+</p>
+
+<div class="two-columns clearfix">
+  <div class="left">
+    <h2>Original</h2>
+    
+    <table id="test-table">
+      <thead>
+        <tr>
+          <th colspan="3"> </th>
+          <th> </th>
+        </tr>
+      </thead>
+      <tr>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td rowspan="2"> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td> </td>
+        <td colspan="2"> </td>
+      </tr>
+    </table>
+  </div>
+  
+  <div class="right">
+    <h2>Expanded</h2>
+  </div>
+</div>
+
+<script type="text/javascript" charset="utf-8">
+  /* <![CDATA[ */
+  (function() {
+    var table = $('test-table');
+    
+    function expandTable() {
+      var size          = table.expandedSize(),
+          expandedTable = new Element('table');
+      
+      for (var r = 0; r < size.height; r++) {
+        var row = new Element('tr');
+        
+        for (var c = 0; c < size.width; c++) {
+          var cell    = table.cellAt(r, c),
+              newCell = new Element(cell.tagName)
+                .store('originCell', cell)
+                .observe('mouseover', toggleOriginCellHighlight)
+                .observe('mouseout', toggleOriginCellHighlight);
+          
+          row.insert({ bottom: newCell });
+        }
+        
+        expandedTable.insert({ bottom: row });
+      }
+      
+      table.up('div').next().insert({ bottom: expandedTable });
+    }
+    
+    function toggleOriginCellHighlight(evt) {
+      evt.element().retrieve('originCell').toggleClassName('highlighted');
+    }
+    
+    document.observe('dom:loaded', expandTable);
+  })();
+  /* ]]> */
+</script>
+
+</body>
+</html>

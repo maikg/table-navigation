@@ -2,7 +2,7 @@
 // Doesn't work with nested tables (yet)
 
 (function() {
-  var tableMethods = {    
+  var tableMethods = {
     cellAt: function(table, r, c) {
       var matrix = getExpandedMatrix($(table));
   
@@ -79,14 +79,14 @@
         if (Object.isElement(matrix[r][c])) {
           throw "Cell at #{row},#{column} already occupied. Invalid markup.".interpolate({
             row: r,
-            column: colIndex
+            column: c
           });
         }
         
         matrix[r][c] = cell;
-        
-        colIndex += 1;
       }
+      
+      colIndex += 1;
     }
 
     // Check if we don't stumble upon a cell from an earlier row that spans multiple rows.
