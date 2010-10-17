@@ -2,41 +2,19 @@
 // Doesn't work with nested tables (yet)
 
 (function() {
-  var tableMethods = {
-    cellAt: function(table, r, c) {
-      var matrix = getExpandedMatrix($(table));
-  
-      if (!Object.isArray(matrix[r])) {
-        return undefined;
+  Element.addMethods('TABLE', {    
+    expand: function(table) {
+      var key     = 'expanded-matrix',
+          matrix  = table.retrieve(key);
+
+      if (!matrix) {
+        matrix = buildExpandedMatrix(table);
+        table.store(key, matrix);
       }
-  
-      return matrix[r][c];
-    },
-    
-    expandedSize: function(table) {
-      var matrix = getExpandedMatrix($(table));
-      
-      return {
-        width: matrix[0] ? matrix[0].size() : 0,
-        height: matrix.size()
-      };
+
+      return matrix;
     }
-  };
-  
-  Element.addMethods('TABLE', tableMethods);
-  
-  
-  function getExpandedMatrix(table) {
-    var key   = 'expanded-matrix',
-        index = table.retrieve(key);
-    
-    if (!index) {
-      index = buildExpandedMatrix(table);
-      table.store(key, index);
-    }
-    
-    return index;
-  }
+  });
   
   
   function buildExpandedMatrix(table) {
@@ -58,7 +36,22 @@
       row.childElements().inject(colIndex, expandCellIntoMatrix.curry(matrix, rowIndex));
     });
     
-    return matrix;
+    return {
+      get: function(r, c) {
+        if (!Object.isArray(matrix[r])) {
+          return undefined;
+        }
+
+        return matrix[r][c];
+      },
+      
+      size: function() {
+        return {
+          width: matrix[0] ? matrix[0].size() : 0,
+          height: matrix.size()
+        };
+      }
+    };
   }
   
   

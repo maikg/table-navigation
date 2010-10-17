@@ -2,13 +2,14 @@
 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-	<title>Table navigation test</title>
+	<title>Table navigation readme</title>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<script src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.1.0/prototype.js" type="text/javascript" charset="utf-8"></script>
 	<script src="table-navigation.js" type="text/javascript" charset="utf-8"></script>
 	<style type="text/css" media="screen">
 	  body {
 	    font-family: Helvetica, Arial;
+	    margin-bottom: 30px;
 	  }
 	  table {
 	    margin: 0 auto;
@@ -60,19 +61,35 @@
 <h1>Table expansion</h1>
 
 <p>
-  Hover the cells in the expanded table to see their corresponding cells in the original table
-  get highlighted. In the expanded table, all cells are &quot;unfolded&quot; to remove any
-  rowspans and colspans.
+  Hover the cells in either of the tables to the mapping between the cells in both tables. In the expanded table, all
+  cells are &quot;unfolded&quot; (e.g. redundancy is introduced) to remove any rowspans and colspans.
+</p>
+
+<p>
+  You can access the expanded table by calling <code>expand()</code> on any table. This returns an object that that
+  defines the following methods.
+  
+  <ul>
+    <li>
+      <code>get(row, column)</code> - Returns a reference to the cell element at the given position in the table
+      after expansion. Returns <code>undefined</code> when accessing an invalid location.
+    </li>
+    <li>
+      <code>size()</code> - Returns an object that contains the size of the expanded table. This object has two
+      members, <code>width</code> and <code>height</code>.
+    </li>
+  </ul>
 </p>
 
 <div class="two-columns clearfix">
   <div class="left">
     <h2>Original</h2>
     
-    <table id="test-table">
+    <table id="expansion-example">
       <thead>
         <tr>
           <th colspan="3"> </th>
+          <th> </th>
           <th> </th>
         </tr>
       </thead>
@@ -81,6 +98,7 @@
         <td> </td>
         <td> </td>
         <td> </td>
+        <td rowspan="3"> </td>
       </tr>
       <tr>
         <td rowspan="2"> </td>
@@ -92,6 +110,11 @@
         <td> </td>
         <td colspan="2"> </td>
       </tr>
+      <tfoot>
+        <tr>
+          <td colspan="5"></td>
+        </tr>
+      </tfoot>
     </table>
   </div>
   
@@ -103,21 +126,30 @@
 <script type="text/javascript" charset="utf-8">
   /* <![CDATA[ */
   (function() {
-    var table = $('test-table');
+    var table = $('expansion-example');
     
     function expandTable() {
-      var size          = table.expandedSize(),
-          expandedTable = new Element('table');
+      var expandedMatrix  = table.expand(),
+          size            = expandedMatrix.size(),
+          expandedTable   = new Element('table');
       
       for (var r = 0; r < size.height; r++) {
         var row = new Element('tr');
         
         for (var c = 0; c < size.width; c++) {
-          var cell    = table.cellAt(r, c),
-              newCell = new Element(cell.tagName)
-                .store('originCell', cell)
+          var cell          = expandedMatrix.get(r, c),
+              expandedCells = cell.retrieve('expanded-cells'),
+              newCell       = new Element(cell.tagName)
+                .store('origin-cell', cell)
                 .observe('mouseover', toggleOriginCellHighlight)
                 .observe('mouseout', toggleOriginCellHighlight);
+          
+          if (expandedCells === undefined) {
+            expandedCells = [];
+            cell.store('expanded-cells', expandedCells);
+          }
+          
+          expandedCells.push(newCell);
           
           row.insert({ bottom: newCell });
         }
@@ -126,10 +158,20 @@
       }
       
       table.up('div').next().insert({ bottom: expandedTable });
+      
+      table.select('td, th')
+        .invoke('observe', 'mouseover', toggleExpandedCellsHighlight)
+        .invoke('observe', 'mouseout', toggleExpandedCellsHighlight);
+    }
+    
+    function toggleExpandedCellsHighlight(evt) {
+      this.toggleClassName('highlighted');
+      this.retrieve('expanded-cells').invoke('toggleClassName', 'highlighted');
     }
     
     function toggleOriginCellHighlight(evt) {
-      evt.element().retrieve('originCell').toggleClassName('highlighted');
+      this.toggleClassName('highlighted');
+      this.retrieve('origin-cell').toggleClassName('highlighted');
     }
     
     document.observe('dom:loaded', expandTable);
