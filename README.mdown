@@ -1,0 +1,6 @@
+# table-navigation
+
+table-navigation is a plugin for Prototype 1.6.1+ that adds methods for easy navigation between adjacent cells inside a
+table element.
+
+Find the full documentation at [http://maikg.github.com/table-navigation](http://maikg.github.com/table-navigation).
