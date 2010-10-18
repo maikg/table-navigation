@@ -1,0 +1,368 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>table-navigation README</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <script src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.1.0/prototype.js" type="text/javascript" charset="utf-8"></script>
+  <script src="table-navigation.js" type="text/javascript" charset="utf-8"></script>
+  <style type="text/css" media="screen">
+    #header {
+      background-color: black;
+      color: white;
+      font-size: 200%;
+      padding: 3px 15px;
+      margin: 0;
+    }
+    
+    #content {
+      margin: 0px 15px 15px 15px;
+    }
+  
+    body {
+      font-family: Helvetica, Arial;
+      margin: 0;
+      margin-bottom: 30px;
+    }
+    table {
+      margin: 0 auto;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 30px;
+      border: 2px solid black;
+      text-align: center;
+    }
+    .highlighted {
+      background-color: red;
+    }
+    .two-columns div {
+      width: 50%;
+      text-align: center;
+    }
+    .two-columns .left {
+      float: left;
+    }
+    .two-columns .right {
+      float: right;
+    }
+    
+    .clearfix:after {
+      content: ".";
+      display: block;
+      clear: both;
+      visibility: hidden;
+      line-height: 0;
+      height: 0;
+    }
+
+    .clearfix {
+      display: inline-block;
+    }
+
+    html[xmlns] .clearfix {
+      display: block;
+    }
+
+    * html .clearfix {
+      height: 1%;
+    }
+  </style>
+</head>
+<body>
+
+<div id="header">
+  table-navigation README
+</div>
+
+<div id="content">
+  <h1>Contents</h1>
+  
+  <ul>
+    <li><a href="#introduction">Introduction</a></li>
+    <li>
+      <a href="#usage">Usage</a>
+      <ul>
+        <li><a href="#installation">Installation</a></li>
+        <li><a href="#table-expansion">Table Expansion</a></li>
+        <li><a href="#cell-navigation">Cell Navigation</a></li>
+      </ul>
+    </li>
+    <li><a href="#known-bugs">Known Bugs</a></li>
+    <li><a href="#license">License</a></li>
+  </ul>
+  
+  <a name="introduction"></a><h1>Introduction</h1>
+  
+  <p>
+    table-navigation is a plugin for Prototype 1.6.1+ that adds methods for easy navigation between adjacent cells
+    inside a <code>table</code> element.
+  </p>
+  
+  <a name="usage"></a><h1>Usage</h1>
+
+  <a name="installation"></a><h2>Installation</h2>
+
+  <p>
+    Check out the latest version of the plugin from <a href="http://github.com/maikg/table-navigation">Github</a> and
+    make sure you include <a href="http://www.prototypejs.org/">Prototype 1.6.1</a> or higher before including this
+    plugin.
+  </p>
+
+  <a name="table-expansion"></a><h2>Table Expansion</h2>
+
+  <p>
+    Hover the cells in either of the tables to the mapping between the cells in both tables. In the expanded table, all
+    cells are &quot;unfolded&quot; (e.g. redundancy is introduced) to remove any rowspans and colspans.
+  </p>
+
+  <p>
+    You can access the expanded table by calling <code>expand()</code> on any table. This returns an object that that
+    defines the following methods.
+  </p>
+
+  <ul>
+    <li>
+      <code>get(row, column)</code> - Returns a reference to the cell element at the given position in the table
+      after expansion. Returns <code>undefined</code> when accessing an invalid location.
+    </li>
+    <li>
+      <code>size()</code> - Returns an object that contains the size of the expanded table. This object has two
+      members, namely <code>width</code> and <code>height</code>.
+    </li>
+    <li>
+      <code>positions(cell)</code> - Returns all the positions at which the given cells occurs in the expanded table.
+      The return value is an array of objects, where the objects contain the members <code>row</code> and
+      <code>column</code>.
+    </li>
+  </ul>
+
+  <div class="two-columns clearfix">
+    <div class="left">
+      <h2>Original</h2>
+
+      <table id="expansion-example">
+        <thead>
+          <tr>
+            <th colspan="3"> </th>
+            <th> </th>
+            <th> </th>
+          </tr>
+        </thead>
+        <tr>
+          <td> </td>
+          <td> </td>
+          <td> </td>
+          <td> </td>
+          <td rowspan="3"> </td>
+        </tr>
+        <tr>
+          <td rowspan="2"> </td>
+          <td> </td>
+          <td> </td>
+          <td> </td>
+        </tr>
+        <tr>
+          <td> </td>
+          <td colspan="2"> </td>
+        </tr>
+        <tr>
+          <td colspan="5"></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="right">
+      <h2>Expanded</h2>
+    </div>
+  </div>
+
+  <script type="text/javascript" charset="utf-8">
+    /* <![CDATA[ */
+    (function() {
+      var table = $('expansion-example');
+
+      function expandTable() {
+        table.up('div').next().insert({ bottom: buildExpandedTable() });
+
+        table.select('td, th')
+          .invoke('observe', 'mouseover', toggleExpandedCellsHighlight)
+          .invoke('observe', 'mouseout', toggleExpandedCellsHighlight);
+      }
+
+      function buildExpandedTable() {
+        var expandedMatrix  = table.expand(),
+            size            = expandedMatrix.size(),
+            expandedTable   = new Element('table');
+
+        for (var r = 0; r < size.height; r++) {
+          var row = new Element('tr');
+
+          for (var c = 0; c < size.width; c++) {
+            var cell          = expandedMatrix.get(r, c),
+                expandedCells = cell.retrieve('expanded-cells'),
+                newCell       = new Element(cell.tagName)
+                  .store('origin-cell', cell)
+                  .observe('mouseover', toggleOriginCellHighlight)
+                  .observe('mouseout', toggleOriginCellHighlight);
+
+            if (expandedCells === undefined) {
+              expandedCells = [];
+              cell.store('expanded-cells', expandedCells);
+            }
+
+            expandedCells.push(newCell);
+
+            row.insert({ bottom: newCell });
+          }
+
+          expandedTable.insert({ bottom: row });
+        }
+
+        return expandedTable;
+      }
+
+      function toggleExpandedCellsHighlight(evt) {
+        this.toggleClassName('highlighted');
+        this.retrieve('expanded-cells').invoke('toggleClassName', 'highlighted');
+      }
+
+      function toggleOriginCellHighlight(evt) {
+        this.toggleClassName('highlighted');
+        this.retrieve('origin-cell').toggleClassName('highlighted');
+      }
+
+      document.observe('dom:loaded', expandTable);
+    })();
+    /* ]]> */
+  </script>
+
+
+  <a name="cell-navigation"></a><h2>Cell Navigation</h2>
+
+  <p>
+    The real usefulness of this table expansion becomes apparent when navigating between cells in a table.
+  </p>
+
+  <p>
+    Click on a cell to highlight it and use the keyboard arrow keys to navigate between cells. Using the cell navigation
+    methods that are defined on table cells, rowspans and colspans are taken into account when navigation the DOM of the
+    table. The plugin defines a few convenience methods to simplify table navigation. You can call <code>cellUp()</code>,
+    <code>cellDown()</code>, <code>cellLeft()</code> and <code>cellRight()</code> on any table cell to get a reference to
+    the appropriate adjacent cell.
+  </p>
+
+  <p>
+    The methods return <code>undefined</code> if the bounds of the table are reached.
+  </p>
+
+  <div>
+    <table id="navigation-example">
+      <thead>
+        <tr>
+          <th colspan="3"> </th>
+          <th> </th>
+          <th> </th>
+        </tr>
+      </thead>
+      <tr>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+        <td rowspan="3"> </td>
+      </tr>
+      <tr>
+        <td rowspan="2"> </td>
+        <td> </td>
+        <td> </td>
+        <td> </td>
+      </tr>
+      <tr>
+        <td> </td>
+        <td colspan="2"> </td>
+      </tr>
+      <tfoot>
+        <tr>
+          <td colspan="5"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <script type="text/javascript" charset="utf-8">
+    /* <![CDATA[ */
+    document.observe('dom:loaded', function() {
+      var table = $('navigation-example'),
+          currentCell,
+          keyMap = {};
+
+      keyMap[Event.KEY_UP] = 'cellUp';
+      keyMap[Event.KEY_DOWN] = 'cellDown';
+      keyMap[Event.KEY_LEFT] = 'cellLeft';
+      keyMap[Event.KEY_RIGHT] = 'cellRight';
+
+
+      table.observe('click', function(evt) {
+        changeCurrentCell(evt.findElement('td, th'));
+      });
+
+
+      document.observe('keydown', function(evt) {
+        var methodName = keyMap[evt.keyCode],
+            newCell;
+
+        if (evt.keyCode == Event.KEY_ESC) {
+          changeCurrentCell(null);
+          evt.stop();
+          return;
+        }
+
+        if (!Object.isElement(currentCell) || !methodName) {
+          return;
+        }
+
+        newCell = currentCell[methodName]();
+
+        if (Object.isElement(newCell)) {
+          changeCurrentCell(newCell);
+        }
+
+        evt.stop();
+      });
+
+
+      function changeCurrentCell(cell) {
+        if (Object.isElement(currentCell)) {
+          currentCell.removeClassName('highlighted');
+
+          if (currentCell == cell) {
+            currentCell = null;
+            return;
+          }
+        }
+
+        if (!Object.isElement(cell)) {
+          return;
+        }
+
+        cell.addClassName('highlighted');
+        currentCell = cell;
+      }
+    });
+    /* ]]> */
+  </script>
+
+  <a name="known-bugs"></a><h1>Known Bugs</h1>
+
+  <ul>
+    <li>The plugin does not work correctly with nested tables when navigating anything but the innermost table.</li>
+  </ul>
+
+  <a name="license"></a><h1>License</h1>
+
+  <p>The plugin is licensed under the BSD license. You can find a copy in the plugin's JavaScript file.</p>
+</div>
+
+</body>
+</html>
